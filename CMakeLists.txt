@@ -21,11 +21,23 @@ target_link_libraries(run_tests gtest gtest_main)
 
 
 # Code coverage:
-#set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
-#if(CMAKE_COMPILER_IS_GNUCXX)
-#    include(CodeCoverage)
-#    setup_target_for_coverage(${PROJECT_NAME}_coverage run_tests coverage)
-#endif()
-#if(CMAKE_COMPILER_IS_GNUCXX)
-#    target_link_libraries(run_tests gcov)
-#endif()
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
+if(CMAKE_COMPILER_IS_GNUCXX)
+
+    # turn off optimizations for accurate code coverage:
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O0")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+
+    include(CodeCoverage)
+    append_coverage_compiler_flags()
+    set(GCOVR_PATH "/software/x86_64/3.10.0/python/3.7.2/bin/gcovr")
+
+    set(COVERAGE_EXCLUDES "${PROJECT_SOURCE_DIR}/googletest/*")
+
+    setup_target_for_coverage_gcovr_html(NAME run_tests_coverage
+                                         EXECUTABLE run_tests
+                                         DEPENDENCIES run_tests)
+
+    # target_link_libraries(run_tests gcov) # necessary?
+endif()

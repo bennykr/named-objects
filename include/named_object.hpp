@@ -48,7 +48,9 @@ protected:
 		switch_object(other);
 	}
     void operator=(NamedObject && other){
-    	if (name_attached) detach_name(); // clear current data
+    	if (name_attached){
+			detach_name(); // clear current data
+		}
 		switch_object(other);
     }
 
@@ -78,8 +80,12 @@ public:
 	void attach_name(std::string const & new_name = ""){
 		assert_with_message(false == name_attached,
 							"NamedObject: object already attached");
-		if (!new_name.empty()) name = new_name;
-		if (name.empty()) return;
+		if (!new_name.empty()) {
+			name = new_name;
+		}
+		if (name.empty()) {
+			return;
+		}
 		name_attached = true;
     	assert_with_message(0u == named_objects.count(name),
 							"NamedObject: name already used");
@@ -105,7 +111,9 @@ public:
 
 	static NamedObject * find(std::string const & name_){
 		auto const iter = named_objects.find(name_);
-		if (named_objects.end() == iter) return nullptr;
+		if (named_objects.end() == iter){
+			return nullptr;
+		}
 		return iter->second;
 	}
 
@@ -116,8 +124,10 @@ public:
 	}
 
 	std::string const & get_name(){
-		if (name != "") return name;
-		else return unnamed_object;
+		if (name != ""){
+			return name;
+		}
+		return unnamed_object;
 	}
 
     // Extensions to header here.

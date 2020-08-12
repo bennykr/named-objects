@@ -69,3 +69,22 @@ TEST(NamedObject, MoveConstructor) {
     AttachedObject object_2(std::move(object_1));
     ASSERT_EQ(NamedObject::find("1"), &object_2);
 }
+
+TEST(NamedObject, EmptyName) {
+    ASSERT_DEATH(AttachedObject(""), "name .* empty");
+}
+
+TEST(NamedObject, DuplicateName) {
+    AttachedObject attached_object;
+    ASSERT_DEATH(AttachedObject(), "name .* used");
+}
+
+TEST(NamedObject, InvalidMove) {
+    AttachedObject attached_object;
+    AttachedObject(std::move(attached_object));
+    ASSERT_DEATH(AttachedObject(std::move(attached_object)), "object .* detached");
+}
+
+TEST(NamedObject, FailedGet) {
+    ASSERT_DEATH(NamedObject::get("missing name"), "name missing");
+}

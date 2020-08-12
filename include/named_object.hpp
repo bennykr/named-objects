@@ -21,94 +21,70 @@ class NamedObject{
 
 private:
 
-	static inline const std::string unnamed_object = "unnamed_object";
-
 	// `inline` means that there exists only one (static) copy of this std::map,
 	// independently of the number of its occurrences in different translation units.
     // This obviates the need in a .cpp file.
-
 	// Note: This currently doesn't work with Intel's compiler (icc 19.0.1).
 	// Can be fixed by adding a .cpp file
 	static inline std::map<std::string, NamedObject*> named_objects;
 
 	std::string name;
-	bool name_attached;
 
 protected:
 
-	explicit NamedObject(std::string const & name_ = "")
-	: name(name_), name_attached(false){
+	explicit NamedObject(std::string const & name_) : name(name_){
 		attach_name();
 	}
 
 	NamedObject(NamedObject const & other) = delete;
 	void operator=(NamedObject const & other) = delete;
 
-	NamedObject(NamedObject && other) : name(""), name_attached(false){
+	NamedObject(NamedObject && other) : name() {
 		switch_object(other);
 	}
     void operator=(NamedObject && other){
-    	if (name_attached){
-			detach_name(); // clear current data
-		}
+		detach_name(); // clear current data
 		switch_object(other);
     }
 
 private:
-	void switch_object(NamedObject & other){
-		name = other.name;
-		name_attached = other.name_attached;
 
-		if (name_attached){
-			other.name_attached = false;
-	    	assert_with_message(0u != named_objects.count(name),
-								"NamedObject: attached object missing from map");
-	    	named_objects[name] = this;
-		}
+	void attach_name(){
+		assert_with_message(!name.empty(), "NamedObject: name must not be empty");
+
+		auto const [iter, success] = named_objects.try_emplace(name, this);
+		(void) iter; // avoid unused variable warning
+    	assert_with_message(success, "NamedObject: name already used");
 	}
 
-	void remove_from_map(){
-		if (name_attached){
+	void switch_object(NamedObject & other){
+		assert_with_message(!other.name.empty(),
+							"NamedObject: moved object already detached");
+
+		auto iter = named_objects.find(other.name);
+    	assert_with_message(named_objects.end() != iter,
+							"NamedObject: moved object missing from map");
+
+		name = other.name;
+	    iter->second = this;
+		other.name.clear();
+	}
+
+	void detach_name(){
+		if (!name.empty()){
 			size_t const num_erased = named_objects.erase(name);
 			assert_with_message(num_erased > 0,
-								"NamedObject: object missing from map");
+								"NamedObject: trying to detache an object missing from map");
+			name.clear();
 		}
 	}
 
 public:
 
-	void attach_name(std::string const & new_name = ""){
-		assert_with_message(false == name_attached,
-							"NamedObject: object already attached");
-		if (!new_name.empty()) {
-			name = new_name;
-		}
-		if (name.empty()) {
-			return;
-		}
-		name_attached = true;
-    	assert_with_message(0u == named_objects.count(name),
-							"NamedObject: name already used");
-    	named_objects[name] = this;
-	}
-
-	void detach_name(){
-		remove_from_map();
-		name_attached = false;
-	}
-
 	virtual ~NamedObject(){
         detach_name();
     }
 	
-	void set_name(std::string const & new_name){
-		remove_from_map();
-		name = new_name;
-		if (name_attached){
-			named_objects[new_name] = this;
-		}
-	}
-
 	static NamedObject * find(std::string const & name_){
 		auto const iter = named_objects.find(name_);
 		if (named_objects.end() == iter){
@@ -123,11 +99,14 @@ public:
 		return *ptr;
 	}
 
+	void reset_name(std::string const & new_name){
+		detach_name();
+		name = new_name;
+		attach_name();
+	}
+
 	std::string const & get_name(){
-		if (name != ""){
-			return name;
-		}
-		return unnamed_object;
+		return name;
 	}
 
     // Extensions to header here.
@@ -135,7 +114,6 @@ public:
     // For example:
     // virtual void write_hdf5(H5::Group & h5group, std::string const & name_) const = 0;
 	// void write_hdf5(H5::Group & h5group) const {
-	// 	assert(name != "");
 	// 	write_hdf5(h5group, name);
 	// }
 };

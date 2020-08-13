@@ -1,9 +1,10 @@
 # named-objects
 Header-only named object base class.
+This can be useful to manage user-defined data structures (based on runtime input)
 
 -------------------
 
-Compilation and execution of tests with:
+Compilation of tests with:
 > mkdir build \
 > cd build \
 > cmake .. \

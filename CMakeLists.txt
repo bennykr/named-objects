@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(INCLUDES ${PROJECT_SOURCE_DIR}/include)
 include_directories(${INCLUDES})
 
-add_subdirectory(./googletest)
+add_subdirectory(${PROJECT_SOURCE_DIR}/googletest)
 enable_testing()
 include_directories(${gtest_SOURCE_DIR}/include) # ${gtest_SOURCE_DIR} - for "gtest_main.cc"
 
@@ -20,17 +20,22 @@ target_link_libraries(run_tests gtest gtest_main)
 # add_test(UnitTests run_tests) # for `make test`
 
 
-# Code coverage:
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 if(CMAKE_COMPILER_IS_GNUCXX)
+
+    include(CodeCoverage)
+    append_coverage_compiler_flags()
 
     # turn off optimizations for accurate code coverage:
     set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O0")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 
-    include(CodeCoverage)
-    append_coverage_compiler_flags()
+    # Note - this is still insufficient, since unused inline functions are
+    # removed by the compiler, and do not affect line coverage percentage.
+    # compiler options "-fno-inline -fno-inline-small-functions -fno-default-inline"
+    # dont seem to work, and "--keep-static-functions --keep-inline-functions"
+    # cause linker errors.
     
     set(COVERAGE_EXCLUDES "${PROJECT_SOURCE_DIR}/googletest/*")
 
